@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Alitas Fieles — Pedidos</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --naranja:#D85A30;
+  --naranja-dark:#993C1D;
+  --naranja-light:#FAECE7;
+  --amarillo:#EF9F27;
+  --negro:#1a1a1a;
+  --gris:#2a2a2a;
+  --borde:#e5e5e5;
+  --bg:#f7f5f2;
+  --blanco:#ffffff;
+  --texto:#1a1a1a;
+  --texto2:#666;
+  --verde:#25D366;
+}
+body{font-family:'Nunito',sans-serif;background:var(--bg);height:100vh;overflow:hidden;display:flex;flex-direction:column;}
+
+/* HEADER */
+.header{background:var(--negro);padding:10px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--amarillo);letter-spacing:2px;}
+.logo span{color:var(--naranja);}
+.header-mesa{color:#fff;font-size:13px;font-weight:600;background:var(--gris);padding:5px 14px;border-radius:20px;}
+.header-mesa.activa{background:var(--naranja);color:#fff;}
+
+/* LAYOUT */
+.layout{display:flex;flex:1;overflow:hidden;}
+
+/* SIDEBAR MESAS */
+.sidebar{width:100px;background:var(--negro);display:flex;flex-direction:column;overflow-y:auto;padding:8px 6px;gap:5px;flex-shrink:0;}
+.sidebar-label{color:#555;font-size:9px;font-weight:700;letter-spacing:1.5px;text-align:center;padding:4px 0;text-transform:uppercase;}
+.mesa-btn{background:transparent;border:1.5px solid #333;border-radius:10px;padding:8px 4px;color:#888;font-family:'Nunito',sans-serif;font-size:11px;font-weight:700;cursor:pointer;text-align:center;transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:2px;}
+.mesa-btn:hover{border-color:#555;color:#ccc;background:#222;}
+.mesa-btn.activa{background:var(--naranja);border-color:var(--naranja);color:#fff;}
+.mesa-btn .mn{font-family:'Bebas Neue',sans-serif;font-size:20px;line-height:1;}
+.mesa-btn .mi{font-size:9px;color:#666;}
+.mesa-btn.activa .mi{color:#fdd;}
+.mesa-btn.tiene-items{border-color:var(--amarillo);}
+.mesa-btn.tiene-items .mi{color:var(--amarillo);}
+.mesa-btn.activa.tiene-items{border-color:var(--naranja);}
+
+/* MENU */
+.menu-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--bg);}
+.cat-bar{display:flex;gap:6px;padding:10px 14px;background:var(--blanco);border-bottom:1px solid var(--borde);overflow-x:auto;flex-shrink:0;}
+.cat-bar::-webkit-scrollbar{height:3px;}
+.cat-bar::-webkit-scrollbar-thumb{background:var(--borde);}
+.cat-btn{background:transparent;border:1.5px solid var(--borde);border-radius:20px;padding:6px 14px;font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;cursor:pointer;color:var(--texto2);white-space:nowrap;transition:all .15s;}
+.cat-btn:hover{border-color:var(--naranja);color:var(--naranja);}
+.cat-btn.activa{background:var(--naranja);border-color:var(--naranja);color:#fff;}
+.productos-wrap{flex:1;overflow-y:auto;padding:12px 14px;}
+.no-mesa{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--texto2);gap:8px;}
+.no-mesa-icon{font-size:40px;}
+.no-mesa-txt{font-size:14px;font-weight:600;}
+.productos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:10px;}
+.prod-card{background:var(--blanco);border:1.5px solid var(--borde);border-radius:12px;padding:12px 11px;cursor:pointer;transition:all .15s;}
+.prod-card:hover{border-color:var(--naranja);box-shadow:0 2px 10px rgba(216,90,48,.12);transform:translateY(-1px);}
+.prod-card.en-pedido{border-color:var(--naranja);background:var(--naranja-light);}
+.prod-nombre{font-size:13px;font-weight:700;color:var(--texto);margin-bottom:2px;line-height:1.3;}
+.prod-desc{font-size:10px;color:var(--texto2);margin-bottom:6px;line-height:1.35;}
+.prod-precio{font-size:13px;font-weight:700;color:var(--naranja-dark);}
+.prod-sabores-badge{font-size:9px;background:var(--amarillo);color:#4A1B0C;border-radius:10px;padding:2px 7px;display:inline-block;margin-bottom:5px;font-weight:700;}
+
+/* PANEL PEDIDO */
+.pedido-panel{width:285px;background:var(--blanco);border-left:1px solid var(--borde);display:flex;flex-direction:column;flex-shrink:0;}
+.pedido-hdr{padding:12px 14px;border-bottom:1px solid var(--borde);display:flex;align-items:center;justify-content:space-between;}
+.pedido-titulo{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;color:var(--texto);}
+.pedido-items{flex:1;overflow-y:auto;padding:10px;}
+.empty-cart{color:var(--texto2);font-size:12px;text-align:center;padding:30px 10px;line-height:1.6;}
+.pitem{border:1px solid var(--borde);border-radius:10px;padding:10px;margin-bottom:8px;background:#fff;}
+.pitem-top{display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:4px;}
+.pitem-nombre{font-size:12px;font-weight:700;color:var(--texto);flex:1;line-height:1.3;}
+.qty-ctrl{display:flex;align-items:center;gap:4px;flex-shrink:0;}
+.qbtn{width:22px;height:22px;border:1.5px solid var(--borde);border-radius:6px;background:transparent;cursor:pointer;font-size:15px;color:var(--texto);display:flex;align-items:center;justify-content:center;line-height:1;font-family:'Nunito',sans-serif;font-weight:700;}
+.qbtn:hover{background:var(--bg);}
+.qnum{font-size:13px;font-weight:700;min-width:16px;text-align:center;color:var(--texto);}
+.pitem-sabores{margin:4px 0 5px;}
+.sabor-tag{display:inline-block;font-size:10px;background:var(--naranja-light);color:var(--naranja-dark);border-radius:10px;padding:2px 8px;margin:2px 2px 2px 0;font-weight:600;}
+.pitem-precio{font-size:11px;font-weight:700;color:var(--naranja-dark);margin-bottom:5px;}
+.nota-in{width:100%;font-size:10px;border:1px solid var(--borde);border-radius:6px;padding:4px 7px;color:var(--texto);background:var(--bg);resize:none;font-family:'Nunito',sans-serif;}
+.nota-in::placeholder{color:#bbb;}
+.pedido-footer{padding:12px 14px;border-top:1px solid var(--borde);}
+.total-row{display:flex;justify-content:space-between;font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1px;color:var(--texto);margin-bottom:10px;}
+.coment-in{width:100%;font-size:11px;border:1px solid var(--borde);border-radius:8px;padding:7px 10px;color:var(--texto);background:var(--blanco);font-family:'Nunito',sans-serif;resize:none;margin-bottom:8px;}
+.coment-in::placeholder{color:#bbb;}
+.btn-limpiar{width:100%;background:transparent;border:1px solid var(--borde);border-radius:8px;padding:7px;font-size:11px;font-weight:700;color:var(--texto2);cursor:pointer;margin-bottom:7px;font-family:'Nunito',sans-serif;}
+.btn-limpiar:hover{background:var(--bg);}
+.btn-wa{width:100%;background:var(--verde);border:none;border-radius:10px;padding:11px;font-size:14px;font-weight:700;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;font-family:'Nunito',sans-serif;transition:background .15s;}
+.btn-wa:hover{background:#1da851;}
+.btn-wa:disabled{background:#ccc;cursor:not-allowed;}
+
+/* MODAL SABORES */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:200;}
+.modal{background:#fff;border-radius:16px;padding:22px;width:400px;max-width:94vw;max-height:90vh;overflow-y:auto;}
+.modal-titulo{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;color:var(--texto);margin-bottom:4px;}
+.modal-sub{font-size:12px;color:var(--texto2);margin-bottom:14px;font-weight:600;}
+.sabores-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:16px;}
+.sabor-btn{background:var(--bg);border:2px solid var(--borde);border-radius:10px;padding:10px 8px;font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;cursor:pointer;color:var(--texto);text-align:center;transition:all .15s;}
+.sabor-btn:hover{border-color:var(--naranja);color:var(--naranja);}
+.sabor-btn.sel{background:var(--naranja);border-color:var(--naranja);color:#fff;}
+.sabor-btn:disabled{opacity:.35;cursor:not-allowed;}
+.modal-contador{text-align:center;font-size:12px;font-weight:700;color:var(--texto2);margin-bottom:14px;}
+.modal-contador span{color:var(--naranja);font-size:16px;}
+
+/* DISTRIBUCIÓN CANTIDADES SABOR */
+.flavor-qty-list{margin-bottom:16px;display:flex;flex-direction:column;gap:8px;}
+.flavor-qty-item{display:flex;justify-content:space-between;align-items:center;background:var(--bg);padding:8px 12px;border-radius:10px;border:1.5px solid var(--borde);}
+.flavor-qty-name{font-size:13px;font-weight:700;color:var(--texto);}
+.flavor-qty-ctrl{display:flex;align-items:center;gap:6px;}
+.fqbtn{width:26px;height:26px;border:1.5px solid var(--naranja);border-radius:6px;background:transparent;cursor:pointer;font-size:16px;color:var(--naranja);display:flex;align-items:center;justify-content:center;line-height:1;font-family:'Nunito',sans-serif;font-weight:700;transition:all .15s;}
+.fqbtn:hover{background:var(--naranja-light);}
+.fqin{width:34px;height:26px;text-align:center;font-size:14px;font-weight:700;border:1px solid var(--borde);border-radius:6px;color:var(--texto);background:var(--blanco);font-family:'Nunito',sans-serif;-moz-appearance:textfield;}
+.fqin::-webkit-outer-spin-button,.fqin::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+.ms-restantes{text-align:center;font-size:12px;font-weight:700;color:var(--naranja-dark);margin-bottom:10px;}
+
+.modal-btns{display:flex;gap:8px;}
+.btn-cancel{flex:1;background:transparent;border:1.5px solid var(--borde);border-radius:10px;padding:10px;font-size:13px;font-weight:700;cursor:pointer;color:var(--texto2);font-family:'Nunito',sans-serif;}
+.btn-ok{flex:2;background:var(--naranja);border:none;border-radius:10px;padding:10px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;font-family:'Nunito',sans-serif;}
+.btn-ok:disabled{background:#ccc;cursor:not-allowed;}
+
+/* MODAL WHATSAPP */
+.modal-wa-titulo{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;margin-bottom:6px;color:var(--texto);}
+.modal-wa-sub{font-size:12px;color:var(--texto2);margin-bottom:14px;}
+.phone-in{width:100%;border:1.5px solid var(--borde);border-radius:10px;padding:11px 13px;font-size:15px;color:var(--texto);font-family:'Nunito',sans-serif;margin-bottom:12px;}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-thumb{background:#ddd;border-radius:4px;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">🍗 Alitas <span>Fieles</span></div>
+  <div class="header-mesa" id="hdr-mesa">Sin mesa seleccionada</div>
+</div>
+
+<div class="layout">
+  <!-- SIDEBAR MESAS -->
+  <div class="sidebar" id="sidebar"></div>
+
+  <!-- MENU -->
+  <div class="menu-wrap">
+    <div class="cat-bar" id="cat-bar"></div>
+    <div class="productos-wrap" id="productos-wrap">
+      <div class="no-mesa">
+        <div class="no-mesa-icon">🍗</div>
+        <div class="no-mesa-txt">Selecciona una mesa para comenzar</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL PEDIDO -->
+  <div class="pedido-panel">
+    <div class="pedido-hdr">
+      <div class="pedido-titulo" id="pedido-titulo">PEDIDO</div>
+    </div>
+    <div class="pedido-items" id="pedido-items">
+      <div class="empty-cart">Selecciona una mesa<br>y agrega productos</div>
+    </div>
+    <div class="pedido-footer">
+      <div class="total-row"><span>TOTAL</span><span id="total-monto">S/ 0.00</span></div>
+      <textarea class="coment-in" id="coment-general" rows="2" placeholder="Comentario general de la mesa..."></textarea>
+      <button class="btn-limpiar" onclick="limpiarPedido()">🗑 Limpiar pedido</button>
+      <button class="btn-wa" id="btn-wa" onclick="abrirModalWA()" disabled>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        Enviar por WhatsApp
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL SELECCIÓN DE SABORES -->
+<div class="overlay" id="modal-sabores" style="display:none;">
+  <div class="modal">
+    <div class="modal-titulo" id="ms-titulo">Elige los sabores</div>
+    <div class="modal-sub" id="ms-sub">Selecciona hasta X sabores</div>
+    <div class="modal-contador" id="ms-contador"><span id="ms-cnt">0</span> / <span id="ms-max">2</span> sabores seleccionados</div>
+    <div class="sabores-grid" id="ms-grid"></div>
+    
+    <div id="ms-dist-container" style="display:none;">
+      <div class="ms-restantes" id="ms-restantes">Faltan 0 unidades</div>
+      <div class="flavor-qty-list" id="ms-dist-list"></div>
+    </div>
+
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="cerrarModalSabores()">Cancelar</button>
+      <button class="btn-ok" id="ms-ok" onclick="confirmarSabores()" disabled>Agregar al pedido</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL WHATSAPP -->
+<div class="overlay" id="modal-wa" style="display:none;">
+  <div class="modal">
+    <div class="modal-wa-titulo">Enviar por WhatsApp</div>
+    <div class="modal-wa-sub">Número del encargado / cocina (con código de país)</div>
+    <input class="phone-in" type="tel" id="phone-in" placeholder="Ej: 51900694550">
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="cerrarModalWA()">Cancelar</button>
+      <button class="btn-ok" onclick="enviarWA()">Enviar ahora</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DATOS ────────────────────────────────────────────────────
+const SABORES_ALITAS = ["BBQ","Acevichadas","Búfalo Picante","Anticucheras","Doradas","Broasters","Maracuya","Honey Mustard"];
+
+const MENU = {
+  "Alitas": [
+    { id:"al8",  nombre:"8 Alitas",  precio:25.90, desc:"Incluye papas + cremas", maxSabores:2, saboresDisp:SABORES_ALITAS, totalUnidades:8 },
+  ],
+  "Hamburguesas": [
+    { id:"hb1", nombre:"La Clásica",  precio:13.90, desc:"Carne, lechuga, tomate y papas" },
+    { id:"hb2", nombre:"La Cubana",   precio:15.90, desc:"Carne, lechuga, tomate, huevo, plátano y papas" },
+    { id:"hb3", nombre:"La Simona",   precio:16.90, desc:"Carne, lechuga, tomate, queso cheddar y papas" },
+    { id:"hb4", nombre:"La Hawaiana", precio:17.90, desc:"Carne, lechuga, tomate, queso cheddar, piña y papas" },
+    { id:"hb5", nombre:"La Tramposa", precio:22.90, desc:"Carne, queso cheddar, huevo, tocino, lechuga, tomate y papas" },
+    { id:"hb6", nombre:"Todo Terreno",precio:27.90, desc:"Doble carne, doble queso cheddar, tocino, lechuga, tomate y papas" },
+  ],
+  "Salchipapas": [
+    { id:"sp1", nombre:"La Clásica",       precio:13.90, desc:"Salchicha frankfurter y papas" },
+    { id:"sp2", nombre:"La Cubana",        precio:15.90, desc:"Salchicha frankfurter, huevo, plátano y papas" },
+    { id:"sp3", nombre:"La Incondicional", precio:18.90, desc:"Salchicha frankfurter, chorizo, finas hierbas, trozos de pollo y papas" },
+    { id:"sp4", nombre:"La Santa",         precio:21.90, desc:"Salchicha frankfurter, chorizo, finas hierbas, queso, trozos de pollo y papas" },
+  ],
+  "Promos": [
+    { id:"pr1", nombre:"Soltero.com",    precio:20.00, desc:"5u alitas (1 sabor) + gaseosa personal",          maxSabores:1, saboresDisp:SABORES_ALITAS },
+    { id:"pr2", nombre:"Super Fiel",     precio:36.90, desc:"12u alitas — hasta 3 sabores",                    maxSabores:3, saboresDisp:SABORES_ALITAS, totalUnidades:12 },
+    { id:"pr3", nombre:"Combo Traición", precio:50.00, desc:"20u alitas (2 sabores) + Pepsi 1L",                maxSabores:2, saboresDisp:SABORES_ALITAS, totalUnidades:20 },
+    { id:"pr4", nombre:"2 pa 2",         precio:90.00, desc:"40u alitas (4 sabores) + Pepsi 1½L",               maxSabores:4, saboresDisp:SABORES_ALITAS, totalUnidades:40 },
+  ],
+  "Refrescos": [
+    { id:"rf1", nombre:"Chicha Morada 1L",       precio:13.90, desc:"Normal" },
+    { id:"rf2", nombre:"Limonada 1L Normal",      precio:13.90, desc:"Normal" },
+    { id:"rf3", nombre:"Limonada 1L Frozen",      precio:16.90, desc:"Frozen" },
+    { id:"rf4", nombre:"Maracuya 1L Normal",      precio:13.90, desc:"Normal" },
+    { id:"rf5", nombre:"Maracuya 1L Frozen",      precio:16.90, desc:"Frozen" },
+    { id:"rf6", nombre:"Maracumango 1L Normal",   precio:13.90, desc:"Normal" },
+    { id:"rf7", nombre:"Maracumango 1L Frozen",   precio:16.90, desc:"Frozen" },
+    { id:"rf8", nombre:"Fresa Limón 1L Normal",   precio:13.90, desc:"Normal" },
+    { id:"rf9", nombre:"Fresa Limón 1L Frozen",   precio:16.90, desc:"Frozen" },
+  ],
+  "Gaseosas": [
+    { id:"gs1", nombre:"Coca Cola / Inca Cola ½L",   precio:5.00 },
+    { id:"gs2", nombre:"Coca Cola / Inca Cola 1½L",  precio:12.00 },
+    { id:"gs3", nombre:"Coca Cola / Inca Cola 1L",   precio:10.00 },
+    { id:"gs4", nombre:"Pepsi 1L",                   precio:7.00 },
+  ],
+  "Tragos": [
+    { id:"tr1", nombre:"Chilcano",   precio:15.90 },
+    { id:"tr2", nombre:"Mojito",     precio:15.90 },
+    { id:"tr3", nombre:"Pisco Sour", precio:15.90 },
+    { id:"tr4", nombre:"Daikiri",    precio:16.90 },
+  ],
+};
+
+const MESAS = 12;
+let mesaActiva = null;
+let catActiva = "Alitas";
+let pedidos = {};
+for (let i=1;i<=MESAS;i++) pedidos[i]={items:[],comentario:""};
+
+// estado modal sabores
+let modalCtx = null; // {prod, sel:[], dist:{}}
+let waPhone = "";
+
+// ── SIDEBAR ──────────────────────────────────────────────────
+function renderSidebar(){
+  const sb = document.getElementById("sidebar");
+  sb.innerHTML = '<div class="sidebar-label">Mesas</div>';
+  for(let i=1;i<=MESAS;i++){
+    const cnt = pedidos[i].items.reduce((s,x)=>s+x.qty,0);
+    const btn = document.createElement("button");
+    btn.className = "mesa-btn" + (mesaActiva===i?" activa":"") + (cnt>0?" tiene-items":"");
+    btn.innerHTML = `<span class="mn">${i}</span><span class="mi">${cnt>0?cnt+" item"+(cnt>1?"s":""):"vacía"}</span>`;
+    btn.onclick = ()=>selMesa(i);
+    sb.appendChild(btn);
+  }
+}
+
+function selMesa(n){
+  mesaActiva=n;
+  const hm=document.getElementById("hdr-mesa");
+  hm.textContent="Mesa "+n;
+  hm.className="header-mesa activa";
+  document.getElementById("coment-general").value=pedidos[n].comentario;
+  renderSidebar(); renderCats(); renderProductos(); renderPedido();
+}
+
+// ── CATEGORIAS ────────────────────────────────────────────────
+function renderCats(){
+  const bar=document.getElementById("cat-bar");
+  bar.innerHTML="";
+  Object.keys(MENU).forEach(c=>{
+    const b=document.createElement("button");
+    b.className="cat-btn"+(c===catActiva?" activa":"");
+    b.textContent=c;
+    b.onclick=()=>{catActiva=c;renderCats();renderProductos();};
+    bar.appendChild(b);
+  });
+}
+
+// ── PRODUCTOS ─────────────────────────────────────────────────
+function renderProductos(){
+  const wrap=document.getElementById("productos-wrap");
+  if(!mesaActiva){
+    wrap.innerHTML='<div class="no-mesa"><div class="no-mesa-icon">🍗</div><div class="no-mesa-txt">Selecciona una mesa para comenzar</div></div>';
+    return;
+  }
+  const prods=MENU[catActiva];
+  let html='<div class="productos-grid">';
+  prods.forEach(p=>{
+    const enPedido=pedidos[mesaActiva].items.some(x=>x.prodId===p.id);
+    html+=`<div class="prod-card${enPedido?" en-pedido":""}" onclick="clickProducto('${p.id}','${catActiva}')">`;
+    if(p.maxSabores) html+=`<div class="prod-sabores-badge">Hasta ${p.maxSabores} sabor${p.maxSabores>1?"es":""}</div>`;
+    html+=`<div class="prod-nombre">${p.nombre}</div>`;
+    if(p.desc) html+=`<div class="prod-desc">${p.desc}</div>`;
+    html+=`<div class="prod-precio">S/ ${p.precio.toFixed(2)}</div>`;
+    html+=`</div>`;
+  });
+  html+='</div>';
+  wrap.innerHTML=html;
+}
+
+function clickProducto(prodId, cat){
+  if(!mesaActiva) return;
+  const prod=MENU[cat].find(p=>p.id===prodId);
+  if(!prod) return;
+  if(prod.maxSabores && prod.saboresDisp){
+    abrirModalSabores(prod);
+  } else {
+    // sin sabores: agregar directo
+    agregarItem(prod,[],null);
+  }
+}
+
+function agregarItem(prod, sabores, itemExistIdx){
+  const item={
+    prodId: prod.id,
+    nombre: prod.nombre,
+    precio: prod.precio,
+    qty: 1,
+    sabores: sabores.slice(),
+    nota: ""
+  };
+  pedidos[mesaActiva].items.push(item);
+  renderProductos(); renderPedido(); renderSidebar();
+}
+
+// ── MODAL SABORES ─────────────────────────────────────────────
+function abrirModalSabores(prod){
+  modalCtx={prod, sel:[], dist:{}};
+  document.getElementById("ms-titulo").textContent=prod.nombre;
+  document.getElementById("ms-sub").textContent=
+    "Elige hasta "+prod.maxSabores+" sabor"+(prod.maxSabores>1?"es":"");
+  document.getElementById("ms-max").textContent=prod.maxSabores;
+  document.getElementById("ms-cnt").textContent=0;
+  document.getElementById("ms-ok").disabled=true;
+  document.getElementById("ms-dist-container").style.display="none";
+
+  const grid=document.getElementById("ms-grid");
+  grid.innerHTML="";
+  prod.saboresDisp.forEach(s=>{
+    const b=document.createElement("button");
+    b.className="sabor-btn";
+    b.textContent=s;
+    b.dataset.sabor=s;
+    b.onclick=()=>toggleSabor(s,b,prod.maxSabores);
+    grid.appendChild(b);
+  });
+  document.getElementById("modal-sabores").style.display="flex";
+}
+
+function toggleSabor(sabor, btn, max){
+  const sel=modalCtx.sel;
+  if(btn.classList.contains("sel")){
+    modalCtx.sel=sel.filter(s=>s!==sabor);
+    if(modalCtx.dist) delete modalCtx.dist[sabor];
+    btn.classList.remove("sel");
+  } else {
+    if(sel.length>=max) return;
+    modalCtx.sel.push(sabor);
+    if(modalCtx.prod.totalUnidades){
+        let totalAsignado = 0;
+        modalCtx.sel.forEach(s => { if(modalCtx.dist[s]) totalAsignado += modalCtx.dist[s]; });
+        modalCtx.dist[sabor] = Math.max(0, modalCtx.prod.totalUnidades - totalAsignado);
+    }
+    btn.classList.add("sel");
+  }
+  const cnt=modalCtx.sel.length;
+  document.getElementById("ms-cnt").textContent=cnt;
+  
+  // deshabilitar los no seleccionados si llegamos al máximo
+  document.querySelectorAll(".sabor-btn").forEach(b=>{
+    if(!b.classList.contains("sel")){
+      b.disabled = cnt>=max;
+    }
+  });
+
+  verificarModalOk();
+}
+
+function verificarModalOk() {
+    const prod = modalCtx.prod;
+    if (prod.totalUnidades) {
+        renderDistribucion();
+    } else {
+        document.getElementById("ms-ok").disabled = modalCtx.sel.length === 0;
+    }
+}
+
+function renderDistribucion() {
+    const container = document.getElementById("ms-dist-container");
+    const list = document.getElementById("ms-dist-list");
+    const msg = document.getElementById("ms-restantes");
+    const okBtn = document.getElementById("ms-ok");
+    
+    if (modalCtx.sel.length === 0) {
+        container.style.display = "none";
+        okBtn.disabled = true;
+        return;
+    }
+    
+    container.style.display = "block";
+    
+    let totalAsignado = 0;
+    modalCtx.sel.forEach(s => totalAsignado += modalCtx.dist[s]);
+    const prod = modalCtx.prod;
+    const faltan = prod.totalUnidades - totalAsignado;
+    
+    if (faltan > 0) {
+        msg.textContent = `Faltan distribuir ${faltan} alitas`;
+        msg.style.color = "var(--naranja-dark)";
+        okBtn.disabled = true;
+    } else if (faltan === 0) {
+        msg.textContent = `¡Cantidades completas!`;
+        msg.style.color = "var(--verde)";
+        okBtn.disabled = false;
+    } else {
+        msg.textContent = `Exceso de unidades`;
+        msg.style.color = "red";
+        okBtn.disabled = true;
+    }
+    
+    list.innerHTML = "";
+    modalCtx.sel.forEach(s => {
+        const qty = modalCtx.dist[s];
+        const item = document.createElement("div");
+        item.className = "flavor-qty-item";
+        item.innerHTML = `
+            <div class="flavor-qty-name">${s}</div>
+            <div class="flavor-qty-ctrl">
+                <button class="fqbtn" onclick="cambiarDistSabor('${s}', -1)">−</button>
+                <input type="number" class="fqin" value="${qty}" min="0" max="${prod.totalUnidades}" onchange="inputDistSabor('${s}', this.value)">
+                <button class="fqbtn" onclick="cambiarDistSabor('${s}', 1)">+</button>
+            </div>
+        `;
+        list.appendChild(item);
+    });
+}
+
+function cambiarDistSabor(sabor, delta) {
+    const currentQty = modalCtx.dist[sabor];
+    let totalAsignado = 0;
+    modalCtx.sel.forEach(s => totalAsignado += modalCtx.dist[s]);
+    
+    const faltan = modalCtx.prod.totalUnidades - totalAsignado;
+    
+    if (delta > 0 && faltan <= 0) return; 
+    if (delta < 0 && currentQty <= 0) return; 
+    
+    modalCtx.dist[sabor] = currentQty + delta;
+    renderDistribucion();
+}
+
+function inputDistSabor(sabor, val) {
+    let v = parseInt(val) || 0;
+    if(v < 0) v = 0;
+    modalCtx.dist[sabor] = v;
+    
+    let totalAsignado = 0;
+    modalCtx.sel.forEach(s => {
+        if (s !== sabor) totalAsignado += modalCtx.dist[s];
+    });
+    
+    if (totalAsignado + v > modalCtx.prod.totalUnidades) {
+        modalCtx.dist[sabor] = modalCtx.prod.totalUnidades - totalAsignado;
+    }
+    
+    renderDistribucion();
+}
+
+function cerrarModalSabores(){
+  document.getElementById("modal-sabores").style.display="none";
+  modalCtx=null;
+}
+
+function confirmarSabores(){
+  if(!modalCtx || modalCtx.sel.length===0) return;
+  
+  let saboresFinales = [];
+  if (modalCtx.prod.totalUnidades) {
+      modalCtx.sel.forEach(s => {
+          if (modalCtx.dist[s] > 0) {
+              saboresFinales.push(`${modalCtx.dist[s]} ${s}`);
+          }
+      });
+  } else {
+      saboresFinales = modalCtx.sel.slice();
+  }
+  
+  agregarItem(modalCtx.prod, saboresFinales, null);
+  cerrarModalSabores();
+}
+
+// ── PEDIDO ────────────────────────────────────────────────────
+function renderPedido(){
+  const panel=document.getElementById("pedido-items");
+  const titulo=document.getElementById("pedido-titulo");
+  const totalEl=document.getElementById("total-monto");
+  const waBtn=document.getElementById("btn-wa");
+
+  if(!mesaActiva){
+    titulo.textContent="PEDIDO";
+    panel.innerHTML='<div class="empty-cart">Selecciona una mesa<br>y agrega productos</div>';
+    totalEl.textContent="S/ 0.00"; waBtn.disabled=true; return;
+  }
+  titulo.textContent="MESA "+mesaActiva;
+  const items=pedidos[mesaActiva].items;
+  if(items.length===0){
+    panel.innerHTML='<div class="empty-cart">Agrega productos del menú</div>';
+    totalEl.textContent="S/ 0.00"; waBtn.disabled=true; return;
+  }
+  let total=0, html="";
+  items.forEach((item,idx)=>{
+    const sub=item.qty*item.precio; total+=sub;
+    html+=`<div class="pitem">
+      <div class="pitem-top">
+        <span class="pitem-nombre">${item.nombre}</span>
+        <div class="qty-ctrl">
+          <button class="qbtn" onclick="cambiarQty(${idx},-1)">−</button>
+          <span class="qnum">${item.qty}</span>
+          <button class="qbtn" onclick="cambiarQty(${idx},1)">+</button>
+        </div>
+      </div>`;
+    if(item.sabores && item.sabores.length>0){
+      html+=`<div class="pitem-sabores">`;
+      item.sabores.forEach(s=>{ html+=`<span class="sabor-tag">🍗 ${s}</span>`; });
+      html+=`</div>`;
+    }
+    html+=`<div class="pitem-precio">S/ ${sub.toFixed(2)}${item.qty>1?" ("+item.qty+" × "+item.precio.toFixed(2)+")":""}</div>
+      <textarea class="nota-in" rows="1" placeholder="Nota especial..." oninput="setNota(${idx},this.value)">${item.nota||""}</textarea>
+    </div>`;
+  });
+  panel.innerHTML=html;
+  totalEl.textContent="S/ "+total.toFixed(2);
+  waBtn.disabled=false;
+}
+
+function cambiarQty(idx,delta){
+  if(!mesaActiva) return;
+  const items=pedidos[mesaActiva].items;
+  items[idx].qty=Math.max(0,items[idx].qty+delta);
+  if(items[idx].qty===0) items.splice(idx,1);
+  renderProductos(); renderPedido(); renderSidebar();
+}
+
+function setNota(idx,val){
+  if(mesaActiva) pedidos[mesaActiva].items[idx].nota=val;
+}
+
+document.getElementById("coment-general").addEventListener("input",function(){
+  if(mesaActiva) pedidos[mesaActiva].comentario=this.value;
+});
+
+function limpiarPedido(){
+  if(!mesaActiva) return;
+  if(!confirm("¿Limpiar todo el pedido de la Mesa "+mesaActiva+"?")) return;
+  pedidos[mesaActiva]={items:[],comentario:""};
+  document.getElementById("coment-general").value="";
+  renderProductos(); renderPedido(); renderSidebar();
+}
+
+// ── WHATSAPP ──────────────────────────────────────────────────
+function abrirModalWA(){
+  if(!mesaActiva) return;
+  if(pedidos[mesaActiva].items.length===0) return;
+  document.getElementById("phone-in").value=waPhone;
+  document.getElementById("modal-wa").style.display="flex";
+}
+function cerrarModalWA(){ document.getElementById("modal-wa").style.display="none"; }
+
+function enviarWA(){
+  const phone=document.getElementById("phone-in").value.replace(/\D/g,"");
+  if(!phone||phone.length<8){ alert("Ingresa un número válido"); return; }
+  waPhone=phone;
+
+  const items=pedidos[mesaActiva].items;
+  const comentario=pedidos[mesaActiva].comentario;
+  let total=0;
+
+  let msg=`🍗 *PEDIDO — MESA ${mesaActiva}*\n`;
+  msg+=`🕐 ${new Date().toLocaleTimeString("es-PE",{hour:"2-digit",minute:"2-digit"})}\n`;
+  msg+=`━━━━━━━━━━━━━━━━━━\n\n`;
+
+  // agrupar por categoría
+  const porCat={};
+  items.forEach(item=>{
+    const cat=Object.keys(MENU).find(c=>MENU[c].some(p=>p.id===item.prodId))||"Otros";
+    if(!porCat[cat]) porCat[cat]=[];
+    porCat[cat].push(item);
+  });
+
+  Object.entries(porCat).forEach(([cat,lista])=>{
+    msg+=`*${cat.toUpperCase()}*\n`;
+    lista.forEach(item=>{
+      const sub=item.qty*item.precio; total+=sub;
+      msg+=`• ${item.qty}x ${item.nombre} — S/ ${sub.toFixed(2)}`;
+      if(item.sabores&&item.sabores.length>0){
+        msg+=`\n  🍗 Sabores: ${item.sabores.join(", ")}`;
+      }
+      if(item.nota) msg+=`\n  📝 ${item.nota}`;
+      msg+="\n";
+    });
+    msg+="\n";
+  });
+
+  msg+=`━━━━━━━━━━━━━━━━━━\n`;
+  msg+=`💰 *TOTAL: S/ ${total.toFixed(2)}*`;
+  if(comentario) msg+=`\n\n📌 *Nota:* ${comentario}`;
+
+  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`,"_blank");
+  cerrarModalWA();
+}
+
+// ── INIT ──────────────────────────────────────────────────────
+renderSidebar();
+renderCats();
+</script>
+</body>
+</html>

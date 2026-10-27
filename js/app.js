@@ -1,6 +1,7 @@
 /**
  * Alitas Fieles — Lógica Principal de la Aplicación
  * Sistema interactivo de comandas por mesa y despacho por WhatsApp.
+ * Con iconografía vectorial unificada, persistencia y control de estados.
  */
 
 import { RESTAURANT_CONFIG, SABORES_ALITAS, MENU } from "./data.js";
@@ -12,6 +13,7 @@ import {
   loadActiveMesa,
   saveActiveMesa
 } from "./storage.js";
+import { ICONS, getCategoryIcon } from "./icons.js";
 
 // Estado de la aplicación
 const MESAS = RESTAURANT_CONFIG.totalMesas;
@@ -29,9 +31,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
 function initApp() {
   bindEvents();
+  startLiveClock();
   renderSidebar();
   renderCats();
-  
+
   if (mesaActiva && mesaActiva >= 1 && mesaActiva <= MESAS) {
     selMesa(mesaActiva, false);
   } else {
@@ -43,7 +46,7 @@ function initApp() {
 }
 
 function bindEvents() {
-  // Comentario general
+  // Comentario general de mesa
   const comentInput = document.getElementById("coment-general");
   if (comentInput) {
     comentInput.addEventListener("input", (e) => {
@@ -62,8 +65,19 @@ function bindEvents() {
     }
   });
 
-  // Tareas de navegación móvil
+  // Navegación móvil
   setupMobileTabs();
+}
+
+function startLiveClock() {
+  const clockEl = document.getElementById("live-clock");
+  if (!clockEl) return;
+  const update = () => {
+    const now = new Date();
+    clockEl.textContent = now.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" });
+  };
+  update();
+  setInterval(update, 10000);
 }
 
 // ── SIDEBAR / LISTADO DE MESAS ────────────────────────────────
@@ -73,8 +87,11 @@ export function renderSidebar() {
 
   sb.innerHTML = `
     <div class="sidebar-header">
-      <span class="sidebar-title">MESAS</span>
-      <span class="sidebar-count">${MESAS} activas</span>
+      <div class="sidebar-title-box">
+        <span class="sidebar-icon">${ICONS.Table}</span>
+        <span class="sidebar-title">MESAS</span>
+      </div>
+      <span class="sidebar-count">${MESAS}</span>
     </div>
   `;
 
@@ -88,7 +105,7 @@ export function renderSidebar() {
     btn.type = "button";
     btn.className = `mesa-btn ${esActiva ? "activa" : ""} ${tieneItems ? "tiene-items" : ""}`;
     btn.setAttribute("aria-label", `Mesa ${i}, ${tieneItems ? totalItems + ' productos' : 'vacía'}`);
-    
+
     btn.innerHTML = `
       <div class="mesa-badge-status ${tieneItems ? 'ocupada' : 'libre'}"></div>
       <div class="mesa-num-wrap">
@@ -103,7 +120,6 @@ export function renderSidebar() {
 
     btn.onclick = () => {
       selMesa(i);
-      // En móvil, cambiar automáticamente a la pestaña de carta
       if (window.innerWidth <= 768) {
         switchMobileTab("carta");
       }
@@ -118,10 +134,11 @@ export function selMesa(n, shouldSave = true) {
   if (shouldSave) saveActiveMesa(n);
 
   const hmMesa = document.getElementById("hdr-mesa");
+  const hmMesaTxt = document.getElementById("hdr-mesa-txt");
   const comentInput = document.getElementById("coment-general");
 
-  if (hmMesa) {
-    hmMesa.innerHTML = `<span class="hdr-dot"></span> Mesa ${n}`;
+  if (hmMesa && hmMesaTxt) {
+    hmMesaTxt.textContent = `Mesa ${n}`;
     hmMesa.className = "header-mesa activa";
   }
 
@@ -136,7 +153,7 @@ export function selMesa(n, shouldSave = true) {
   updateMobileBadges();
 }
 
-// ── CATEGORÍAS ────────────────────────────────────────────────
+// ── CATEGORÍAS CON ICONOGRAFÍA CONCORDANTE ────────────────────
 export function renderCats() {
   const bar = document.getElementById("cat-bar");
   if (!bar) return;
@@ -148,12 +165,20 @@ export function renderCats() {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = `cat-btn ${cat === catActiva ? "activa" : ""}`;
-    btn.textContent = cat;
+    const itemsCount = MENU[cat]?.length || 0;
+
+    btn.innerHTML = `
+      <span class="cat-btn-icon">${getCategoryIcon(cat)}</span>
+      <span class="cat-btn-label">${cat}</span>
+      <span class="cat-btn-count">${itemsCount}</span>
+    `;
+
     btn.onclick = () => {
       catActiva = cat;
       renderCats();
       renderProductos();
     };
+
     bar.appendChild(btn);
   });
 }
@@ -166,9 +191,11 @@ export function renderProductos() {
   if (!mesaActiva) {
     wrap.innerHTML = `
       <div class="empty-state">
-        <div class="empty-icon">🍗</div>
-        <h3>Selecciona una mesa</h3>
-        <p>Elige una mesa del panel lateral para registrar o consultar pedidos.</p>
+        <div class="empty-icon-box">
+          ${ICONS.Table}
+        </div>
+        <h3>Selecciona una mesa para empezar</h3>
+        <p>Elige una mesa del panel lateral para registrar o consultar comandas.</p>
         <button class="btn-action-primary" onclick="window.switchMobileTab('mesas')">Ver Mesas Disponibles</button>
       </div>
     `;
@@ -185,16 +212,19 @@ export function renderProductos() {
     html += `
       <div class="prod-card ${cantEnPedido > 0 ? "en-pedido" : ""}" onclick="window.clickProducto('${p.id}', '${catActiva}')">
         <div class="prod-card-top">
-          <span class="prod-icon">${p.icono || "🍽️"}</span>
-          ${p.maxSabores ? `<span class="prod-badge">Hasta ${p.maxSabores} ${p.maxSabores > 1 ? "sabores" : "sabor"}</span>` : ""}
+          <span class="prod-icon-box">${getCategoryIcon(catActiva)}</span>
+          ${p.maxSabores ? `<span class="prod-badge">Hasta ${p.maxSabores} ${p.maxSabores > 1 ? "sabores" : "sabor"}</span>` : `<span class="prod-tag-simple">${catActiva}</span>`}
           ${cantEnPedido > 0 ? `<span class="prod-qty-badge">${cantEnPedido}</span>` : ""}
         </div>
         <div class="prod-nombre">${p.nombre}</div>
         ${p.desc ? `<div class="prod-desc">${p.desc}</div>` : ""}
         <div class="prod-card-footer">
-          <span class="prod-precio">${RESTAURANT_CONFIG.moneda} ${p.precio.toFixed(2)}</span>
-          <button class="prod-add-btn" aria-label="Agregar ${p.nombre}">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          <div class="prod-price-wrap">
+            <span class="prod-currency">${RESTAURANT_CONFIG.moneda}</span>
+            <span class="prod-precio">${p.precio.toFixed(2)}</span>
+          </div>
+          <button class="prod-add-btn" type="button" aria-label="Agregar ${p.nombre}">
+            ${ICONS.Plus}
           </button>
         </div>
       </div>
@@ -217,7 +247,7 @@ export function clickProducto(prodId, cat) {
   if (prod.maxSabores && prod.saboresDisp) {
     abrirModalSabores(prod);
   } else {
-    agregarItem(prod, [], null);
+    agregarItem(prod, []);
   }
 }
 
@@ -263,7 +293,7 @@ export function abrirModalSabores(prod) {
   const modalEl = document.getElementById("modal-sabores");
 
   if (tituloEl) tituloEl.textContent = prod.nombre;
-  if (subEl) subEl.textContent = `Selecciona hasta ${prod.maxSabores} ${prod.maxSabores > 1 ? "sabores" : "sabor"} para este pedido:`;
+  if (subEl) subEl.textContent = `Selecciona hasta ${prod.maxSabores} ${prod.maxSabores > 1 ? "sabores" : "sabor"} para este plato:`;
   if (maxEl) maxEl.textContent = prod.maxSabores;
   if (cntEl) cntEl.textContent = "0";
   if (okBtn) okBtn.disabled = true;
@@ -275,7 +305,7 @@ export function abrirModalSabores(prod) {
       const b = document.createElement("button");
       b.type = "button";
       b.className = "sabor-btn";
-      b.textContent = s;
+      b.innerHTML = `<span class="sabor-icon">${ICONS.Alitas}</span> <span>${s}</span>`;
       b.dataset.sabor = s;
       b.onclick = () => toggleSabor(s, b, prod.maxSabores);
       grid.appendChild(b);
@@ -311,7 +341,6 @@ export function toggleSabor(sabor, btn, max) {
   const cntEl = document.getElementById("ms-cnt");
   if (cntEl) cntEl.textContent = cnt;
 
-  // Deshabilitar los botones restantes si se alcanzó el límite
   document.querySelectorAll(".sabor-btn").forEach((b) => {
     if (!b.classList.contains("sel")) {
       b.disabled = cnt >= max;
@@ -361,7 +390,7 @@ function renderDistribucion() {
       msg.className = "ms-restantes completo";
       okBtn.disabled = false;
     } else {
-      msg.textContent = `Exceso de unidades: sobran ${Math.abs(faltan)}`;
+      msg.textContent = `Exceso de piezas: sobran ${Math.abs(faltan)}`;
       msg.className = "ms-restantes exceso";
       okBtn.disabled = true;
     }
@@ -374,11 +403,14 @@ function renderDistribucion() {
       const item = document.createElement("div");
       item.className = "flavor-qty-item";
       item.innerHTML = `
-        <div class="flavor-qty-name">🍗 ${s}</div>
+        <div class="flavor-qty-name">
+          <span class="flavor-qty-icon">${ICONS.Alitas}</span>
+          <span>${s}</span>
+        </div>
         <div class="flavor-qty-ctrl">
-          <button type="button" class="fqbtn" onclick="window.cambiarDistSabor('${s}', -1)">−</button>
+          <button type="button" class="fqbtn" onclick="window.cambiarDistSabor('${s}', -1)">${ICONS.Minus}</button>
           <input type="number" class="fqin" value="${qty}" min="0" max="${prod.totalUnidades}" onchange="window.inputDistSabor('${s}', this.value)">
-          <button type="button" class="fqbtn" onclick="window.cambiarDistSabor('${s}', 1)">+</button>
+          <button type="button" class="fqbtn" onclick="window.cambiarDistSabor('${s}', 1)">${ICONS.Plus}</button>
         </div>
       `;
       list.appendChild(item);
@@ -444,23 +476,34 @@ export function confirmarSabores() {
   cerrarModalSabores();
 }
 
-// ── PANEL DE PEDIDO / COMANDA ─────────────────────────────────
+// ── PANEL DE PEDIDO / COMANDA ENRIQUECIDO ──────────────────────
 export function renderPedido() {
   const panel = document.getElementById("pedido-items");
   const titulo = document.getElementById("pedido-titulo");
+  const subtitulo = document.getElementById("pedido-subtitulo");
+  const statusDot = document.getElementById("pedido-status-dot");
+  const badgeMesa = document.getElementById("pedido-mesa-badge");
   const totalEl = document.getElementById("total-monto");
   const waBtn = document.getElementById("btn-wa");
-  const badgeMesa = document.getElementById("pedido-mesa-badge");
+  const btnHdrLimpiar = document.getElementById("btn-hdr-limpiar");
 
   if (!panel || !titulo || !totalEl || !waBtn) return;
 
+  // ESTADO: SIN MESA
   if (!mesaActiva) {
-    titulo.textContent = "COMANDA";
+    titulo.textContent = "MI PEDIDO";
+    if (subtitulo) subtitulo.textContent = "Selecciona una mesa";
+    if (statusDot) statusDot.className = "pedido-status-dot inactivo";
     if (badgeMesa) badgeMesa.style.display = "none";
+    if (btnHdrLimpiar) btnHdrLimpiar.disabled = true;
+
     panel.innerHTML = `
       <div class="empty-cart">
-        <span class="empty-cart-icon">📝</span>
-        <p>Selecciona una mesa para gestionar la comanda.</p>
+        <div class="empty-cart-icon-box">
+          ${ICONS.Receipt}
+        </div>
+        <p>Comanda en espera</p>
+        <span class="empty-cart-sub">Selecciona una mesa para gestionar productos y despacho.</span>
       </div>
     `;
     totalEl.textContent = `${RESTAURANT_CONFIG.moneda} 0.00`;
@@ -468,20 +511,33 @@ export function renderPedido() {
     return;
   }
 
+  // ESTADO: MESA ACTIVA
+  const items = pedidos[mesaActiva]?.items || [];
+  const totalItems = items.reduce((s, x) => s + x.qty, 0);
+
   titulo.textContent = `MESA ${mesaActiva}`;
   if (badgeMesa) {
-    badgeMesa.textContent = `Mesa ${mesaActiva}`;
-    badgeMesa.style.display = "inline-block";
+    badgeMesa.textContent = "En Atención";
+    badgeMesa.style.display = "inline-flex";
   }
 
-  const items = pedidos[mesaActiva]?.items || [];
+  if (statusDot) {
+    statusDot.className = "pedido-status-dot activo";
+  }
+
+  if (btnHdrLimpiar) {
+    btnHdrLimpiar.disabled = items.length === 0;
+  }
 
   if (items.length === 0) {
+    if (subtitulo) subtitulo.textContent = "0 productos agregados";
     panel.innerHTML = `
       <div class="empty-cart">
-        <span class="empty-cart-icon">🛒</span>
-        <p>No hay platos agregados a esta mesa.</p>
-        <span class="empty-cart-sub">Toca cualquier plato de la carta para sumarlo.</span>
+        <div class="empty-cart-icon-box">
+          ${ICONS.Receipt}
+        </div>
+        <p>Comanda vacía</p>
+        <span class="empty-cart-sub">Toca cualquier plato de la carta para sumarlo a la Mesa ${mesaActiva}.</span>
       </div>
     `;
     totalEl.textContent = `${RESTAURANT_CONFIG.moneda} 0.00`;
@@ -504,29 +560,33 @@ export function renderPedido() {
             <span class="pitem-unit-price">${RESTAURANT_CONFIG.moneda} ${item.precio.toFixed(2)} c/u</span>
           </div>
           <div class="qty-ctrl">
-            <button type="button" class="qbtn" onclick="window.cambiarQty(${idx}, -1)" aria-label="Restar uno">−</button>
+            <button type="button" class="qbtn" onclick="window.cambiarQty(${idx}, -1)" aria-label="Restar">${ICONS.Minus}</button>
             <span class="qnum">${item.qty}</span>
-            <button type="button" class="qbtn" onclick="window.cambiarQty(${idx}, 1)" aria-label="Sumar uno">+</button>
+            <button type="button" class="qbtn" onclick="window.cambiarQty(${idx}, 1)" aria-label="Sumar">${ICONS.Plus}</button>
           </div>
         </div>
 
         ${item.sabores && item.sabores.length > 0 ? `
           <div class="pitem-sabores">
-            ${item.sabores.map((s) => `<span class="sabor-tag">🍗 ${s}</span>`).join("")}
+            ${item.sabores.map((s) => `<span class="sabor-tag">${ICONS.Alitas} ${s}</span>`).join("")}
           </div>
         ` : ""}
 
         <div class="pitem-bottom">
           <span class="pitem-precio">${RESTAURANT_CONFIG.moneda} ${sub.toFixed(2)}</span>
           <button type="button" class="pitem-del-btn" onclick="window.eliminarItem(${idx})" title="Eliminar plato">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+            ${ICONS.Trash}
           </button>
         </div>
 
-        <input type="text" class="nota-in" placeholder="Nota de cocina (ej: bien dorado, sin mayonesa)..." value="${escapeHtml(item.nota || "")}" oninput="window.setNota(${idx}, this.value)">
+        <input type="text" class="nota-in" placeholder="Nota de cocina (ej: bien dorado, sin cremas)..." value="${escapeHtml(item.nota || "")}" oninput="window.setNota(${idx}, this.value)">
       </div>
     `;
   });
+
+  if (subtitulo) {
+    subtitulo.textContent = `${totalItems} ${totalItems === 1 ? 'producto' : 'productos'} en comanda`;
+  }
 
   panel.innerHTML = html;
   totalEl.textContent = `${RESTAURANT_CONFIG.moneda} ${total.toFixed(2)}`;
@@ -665,7 +725,7 @@ export function enviarWA() {
 
   window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, "_blank");
   cerrarModalWA();
-  showToast("Pedido enviado a WhatsApp", "success");
+  showToast("Comanda enviada a WhatsApp", "success");
 }
 
 // ── NAVEGACIÓN MÓVIL ──────────────────────────────────────────
@@ -741,7 +801,7 @@ function escapeHtml(text) {
   }[m]));
 }
 
-// Exponer funciones necesarias en window para onclicks inline en HTML
+// Exponer funciones en window para compatibilidad inline en templates
 window.clickProducto = clickProducto;
 window.cambiarDistSabor = cambiarDistSabor;
 window.inputDistSabor = inputDistSabor;

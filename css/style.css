@@ -879,40 +879,40 @@ body {
   align-items: center;
   gap: 4px;
   background: var(--bg-app);
-  border: 1px solid var(--border-color);
+  border: 1.5px solid var(--border-color);
   border-radius: var(--radius-sm);
-  padding: 2px;
+  padding: 3px;
 }
 
 .qbtn {
-  width: 24px;
-  height: 24px;
-  border: none;
+  width: 28px;
+  height: 28px;
+  border: 1.5px solid var(--border-color);
   border-radius: 6px;
   background: #FFFFFF;
   cursor: pointer;
-  color: var(--text-main);
+  color: var(--primary);
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1;
   transition: var(--transition);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-}
-
-.qbtn svg {
-  width: 13px;
-  height: 13px;
+  user-select: none;
 }
 
 .qbtn:hover {
   background: var(--primary);
+  border-color: var(--primary);
   color: #FFFFFF;
 }
 
 .qnum {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 800;
-  min-width: 20px;
+  min-width: 22px;
   text-align: center;
   color: var(--text-main);
 }
@@ -1311,8 +1311,8 @@ body {
 }
 
 .fqbtn {
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   border: 1.5px solid var(--primary);
   border-radius: var(--radius-sm);
   background: #FFFFFF;
@@ -1321,12 +1321,11 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1;
   transition: var(--transition);
-}
-
-.fqbtn svg {
-  width: 14px;
-  height: 14px;
+  user-select: none;
 }
 
 .fqbtn:hover {
